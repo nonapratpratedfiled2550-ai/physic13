@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>การเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #141b2d;
+    --panel-2: #1b2438;
+    --line: #2c3b56;
+    --text: #e7eefc;
+    --muted: #93a0bb;
+    --x: #3ddec8;
+    --v: #ffb020;
+    --a: #ff5b8a;
+    --f: #79a7ff;
+    --ek: #5dce7c;
+    --ep: #c084fc;
+    --et: #f0d060;
+    --warn: #ffb020;
+    --danger: #ff8b7b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    color: var(--text);
+    font-family: "Leelawadee UI", "Segoe UI", Tahoma, sans-serif;
+    background:
+      radial-gradient(900px 420px at 0% -10%, rgba(61, 222, 200, 0.09), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(121, 167, 255, 0.08), transparent 50%),
+      var(--bg);
+  }
+  button, input { font-family: inherit; }
+  button { cursor: pointer; }
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-end;
+    padding: 16px 18px 8px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  header.top h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  header.top p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .mark {
+    color: var(--x);
+    font-size: 13px;
+    border: 1px solid rgba(61, 222, 200, 0.35);
+    padding: 6px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .app {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 10px 14px 24px;
+    display: grid;
+    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr) minmax(300px, 390px);
+    gap: 12px;
+    align-items: start;
+  }
+  .panel {
+    background: rgba(20, 27, 45, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .left, .right {
+    max-height: calc(100vh - 108px);
+    overflow: auto;
+  }
+  h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 650;
+  }
+  .modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .modes button, .seg button, .presets button, .orient button {
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 8px;
+    text-align: left;
+  }
+  .modes button strong { display: block; font-size: 14px; }
+  .modes button span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .modes button.on, .seg button.on, .presets button.on, .orient button.on {
+    border-color: rgba(61, 222, 200, 0.7);
+    background: rgba(61, 222, 200, 0.12);
+    color: white;
+  }
+  .row { margin-top: 10px; }
+  .row.off { opacity: 0.42; }
+  .lbl {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .lbl b { color: var(--x); font-weight: 650; }
+  input[type="range"] { width: 100%; accent-color: #3ddec8; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .playrow, .seg, .presets, .orient, .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .playrow button {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: #06221e;
+    background: var(--x);
+    font-weight: 700;
+  }
+  #reset {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    font-weight: 650;
+  }
+  .seg button, .presets button, .orient button { padding: 8px 10px; text-align: center; }
+  .switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .assume {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .sim-wrap { position: relative; }
+  #sim, #graph {
+    width: 100%;
+    display: block;
+    background: #0c1220;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+  }
+  #sim { height: min(430px, 48vh); min-height: 300px; }
+  #graph { height: 320px; }
+  .badges {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    pointer-events: none;
+  }
+  .badges span {
+    background: rgba(8, 12, 24, 0.78);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  #insight {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #d5e4f8;
+  }
+  .cards, .formulas, .stats {
+    display: grid;
+    gap: 8px;
+  }
+  .cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .card, .formula, .stat {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 0;
+  }
+  .card .k, .stat .k, .formula .k { color: var(--muted); font-size: 11px; }
+  .card .v, .stat .v {
+    display: block;
+    margin-top: 2px;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card.x .v { color: var(--x); }
+  .card.v .v { color: var(--v); }
+  .card.a .v { color: var(--a); }
+  .card.f .v { color: var(--f); }
+  .card.ek .v { color: var(--ek); }
+  .card.ep .v { color: var(--ep); }
+  .card.et .v { color: var(--et); }
+  .card.hot { box-shadow: inset 0 0 0 1px rgba(255, 176, 32, 0.7); }
+  .formulas { grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  .formula .v { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.35; }
+  .graph-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .graph-tabs button {
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+  .graph-tabs button.on { border-color: rgba(61, 222, 200, 0.7); background: rgba(61, 222, 200, 0.12); }
+  #graph-note { color: var(--muted); font-size: 12px; min-height: 2.6em; margin: 8px 0; line-height: 1.4; }
+  .stats { grid-template-columns: 1fr 1fr 1fr; }
+  #effect { grid-column: 1 / -1; color: #d5e2f5; font-size: 13px; line-height: 1.5; }
+  #miscon {
+    margin-top: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 176, 32, 0.55);
+    background: #2a2416;
+    padding: 12px 14px;
+  }
+  #miscon.amp { border-color: rgba(61, 222, 200, 0.55); background: #132824; }
+  #miscon.damp { border-color: rgba(255, 91, 138, 0.55); background: #2a1820; }
+  #miscon .tag { margin: 0; color: var(--warn); font-size: 11px; font-weight: 700; letter-spacing: 0; }
+  #mis-title { margin: 4px 0 6px; font-size: 15px; line-height: 1.45; color: #fff; }
+  #mis-body, #mis-extra {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: #f6efe2;
+  }
+  #mis-extra { margin-top: 8px; color: #d5deee; }
+  @media (max-width: 1180px) {
+    .app { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); }
+    .right { grid-column: 1 / -1; max-height: none; }
+    .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (max-width: 800px) {
+    header.top { flex-direction: column; align-items: flex-start; }
+    .app { grid-template-columns: 1fr; }
+    .left { max-height: none; }
+    .cards, .formulas { grid-template-columns: 1fr 1fr; }
+    .mark { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>การเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</h1>
+    <p>สื่อจำลองเชิงโต้ตอบสำหรับฟิสิกส์ ม.4–ม.6 · แรงดึงกลับแปรผันตรงกับระยะขจัดและชี้เข้าหาสมดุล</p>
+  </div>
+  <div class="mark">F = −kx · a = −ω²x</div>
+</header>
+<main class="app">
+  <section class="panel left">
+    <h2>โหมดการจำลอง</h2>
+    <div class="modes" id="modes">
+      <button type="button" data-mode="1"><strong>มวล–สปริง</strong><span>T = 2π√(m/k)</span></button>
+      <button type="button" data-mode="2"><strong>ลูกตุ้มอย่างง่าย</strong><span>T = 2π√(L/g)</span></button>
+      <button type="button" data-mode="3"><strong>วงกลมอ้างอิง</strong><span>เงาของ ω คงตัว</span></button>
+      <button type="button" data-mode="4"><strong>พลังงานและเฟสเซอร์</strong><span>Ek, Ep, E รวม</span></button>
+    </div>
+    <div class="row">
+      <h2>ควบคุมเวลา</h2>
+      <div class="playrow">
+        <button type="button" id="play">หยุดชั่วคราว</button>
+        <button type="button" id="reset">เริ่มใหม่</button>
+      </div>
+      <p class="hint">Space เล่นหรือหยุด · R เริ่มใหม่จากแอมพลิจูด</p>
+    </div>
+    <div class="row">
+      <div class="lbl"><span>ความเร็วแอนิเมชัน</span></div>
+      <div class="seg" id="speeds">
+        <button type="button" data-speed="0.25">0.25×</button>
+        <button type="button" data-speed="0.5">0.5×</button>
+        <button type="button" data-speed="1">1.0×</button>
+        <button type="button" data-speed="2">2.0×</button>
+      </div>
+    </div>
+    <div class="row" id="row-m">
+      <div class="lbl"><span>มวล m</span><b id="m-val">1.0 kg</b></div>
+      <input id="m" type="range" min="0.1" max="10" step="0.1" value="1" aria-label="มวล">
+    </div>
+    <div class="row" id="row-k">
+      <div class="lbl"><span>ค่าคงที่สปริง k</span><b id="k-val">50 N/m</b></div>
+      <input id="k" type="range" min="5" max="200" step="5" value="50" aria-label="ค่าคงที่สปริง">
+      <div class="hint" id="k-hint">ใช้ในโหมดสปริง วงกลมอ้างอิง และพลังงาน</div>
+    </div>
+    <div class="row" id="row-L">
+      <div class="lbl"><span>ความยาวเชือก L</span><b id="L-val">1.0 m</b></div>
+      <input id="L" type="range" min="0.1" max="5" step="0.1" value="1" aria-label="ความยาวเชือก">
+      <div class="hint">ใช้ในโหมดลูกตุ้ม · ภาพลูกตุ้มขยายให้เห็นมุมชัด ความยาวจริงคือตัวเลขนี้</div>
+    </div>
+    <div class="row" id="row-A">
+      <div class="lbl"><span>แอมพลิจูด A</span><b id="A-val">0.30 m</b></div>
+      <input id="A" type="range" min="0.05" max="1" step="0.01" value="0.3" aria-label="แอมพลิจูด">
+    </div>
+    <div class="row" id="row-th">
+      <div class="lbl"><span>มุมเริ่มต้น θ₀</span><b id="th-val">10°</b></div>
+      <input id="th" type="range" min="1" max="30" step="1" value="10" aria-label="มุมเริ่มต้น">
+      <div class="hint">แบบจำลองใช้มุมแคบเมื่อ θ ไม่เกิน 10°</div>
+    </div>
+    <div class="row" id="row-g">
+      <div class="lbl"><span>ความเร่งโน้มถ่วง g</span><b id="g-val">9.81 m/s²</b></div>
+      <input id="g" type="range" min="1.6" max="24.8" step="0.01" value="9.81" aria-label="ความเร่งโน้มถ่วง">
+      <div class="presets" id="presets">
+        <button type="button" data-g="9.81">โลก 9.81</button>
+        <button type="button" data-g="1.62">ดวงจันทร์ 1.62</button>
+        <button type="button" data-g="24.79">พฤหัสบดี 24.79</button>
+      </div>
+      <div class="hint" id="g-hint"></div>
+    </div>
+    <div class="row">
+      <div class="lbl"><span>สัมประสิทธิ์ความหน่วง b</span><b id="b-val">0.00 N·s/m</b></div>
+      <input id="b" type="range" min="0" max="1" step="0.05" value="0" aria-label="ความหน่วง">
+      <div class="hint">b = 0 คือ SHM อุดมคติ พลังงานกลคงตัว</div>
+    </div>
+    <div class="row" id="row-orient">
+      <div class="lbl"><span>แนวของสปริง</span></div>
+      <div class="orient" id="orient">
+        <button type="button" data-orient="h">แนวนอน</button>
+        <button type="button" data-orient="v">แนวตั้ง</button>
+      </div>
+    </div>
+    <div class="row toggles">
+      <label class="switch"><input id="vec" type="checkbox" checked> แสดงเวกเตอร์ x, v, a, F</label>
+      <label class="switch"><input id="nrg" type="checkbox"> แสดงแผนภูมิแท่งพลังงาน</label>
+    </div>
+    <p class="assume">สมมติฐาน: สปริงและเชือกไร้มวล · ปล่อยจากหยุดนิ่งที่ +A หรือ +θ₀ · ลูกตุ้มใช้ sinθ ≈ θ ดังนั้น x = Lθ คือระยะตามแนวโค้ง · พลังงานศักย์ของลูกตุ้มในแบบจำลองนี้เท่ากับ ½(mg/L)x² หรือ mgh โดย h ≈ Lθ²/2</p>
+  </section>
+
+  <section class="panel mid">
+    <div class="sim-wrap">
+      <canvas id="sim" width="800" height="430"></canvas>
+      <div class="badges">
+        <span id="badge-mode"></span>
+        <span id="badge-time"></span>
+        <span id="badge-damp" hidden></span>
+        <span id="badge-angle" hidden></span>
+        <span id="badge-live" hidden></span>
+      </div>
+    </div>
+    <div id="insight"></div>
+    <div class="cards" id="cards"></div>
+    <div class="formulas" id="formulas"></div>
+  </section>
+
+  <section class="panel right">
+    <h2>กราฟความสัมพันธ์</h2>
+    <div class="graph-tabs" id="graph-tabs">
+      <button type="button" data-graph="time">x, v, a กับเวลา</button>
+      <button type="button" data-graph="energy">พลังงานกับตำแหน่ง</button>
+      <button type="button" data-graph="phase">ปริภูมิเฟส</button>
+    </div>
+    <canvas id="graph" width="640" height="320"></canvas>
+    <p id="graph-note"></p>
+    <h2>ค่าวิเคราะห์</h2>
+    <div class="stats" id="stats"></div>
+    <div id="miscon">
+      <p class="tag">ความเข้าใจคลาดเคลื่อนที่พบบ่อย</p>
+      <h3 id="mis-title"></h3>
+      <p id="mis-body"></p>
+      <p id="mis-extra"></p>
+    </div>
+  </section>
+</main>
+<script>
+const C = {
+  x: "#3ddec8", v: "#ffb020", a: "#ff5b8a", f: "#79a7ff",
+  ek: "#5dce7c", ep: "#c084fc", et: "#f0d060",
+  text: "#d5e2f5", muted: "#8ea0bb", grid: "rgba(148,176,214,0.10)"
+};
+const TAU = Math.PI * 2;
+const state = {
+  mode: 1, playing: true, speed: 1, orient: "h",
+  showVec: true, showEnergy: false, graph: "time",
+  m: 1, k: 50, L: 1, A: 0.3, theta0: 10, g: 9.81, b: 0,
+  phase: 0, clock: 0, useDamp: false, dampT: 0, sol: null,
+  liveAmp: null, zone: "amp", trail: [], last: 0
+};
+
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function fmt(n, d) {
+  if (!Number.isFinite(n)) return "—";
+  const digits = d == null ? 3 : d;
+  if (Math.abs(n) < 0.5 * Math.pow(10, -digits)) return (0).toFixed(digits);
+  const ax = Math.abs(n);
+  if (ax >= 1e4) return n.toExponential(2);
+  return n.toFixed(digits);
+}
+function omega0() {
+  return state.mode === 2 ? Math.sqrt(state.g / state.L) : Math.sqrt(state.k / state.m);
+}
+function gammaOf() { return state.b / (2 * state.m); }
+function sliderQ() {
+  return state.mode === 2 ? state.theta0 * Math.PI / 180 : state.A;
+}
+function baseAmp() {
+  return state.liveAmp != null ? state.liveAmp : sliderQ();
+}
+function viewAmp() {
+  if (state.liveAmp != null) {
+    const q = Math.abs(state.liveAmp);
+    return Math.max(state.mode === 2 ? state.L * q : q, 1e-4);
+  }
+  const q = state.mode === 2 ? state.L * state.theta0 * Math.PI / 180 : state.A;
+  return Math.max(q, 1e-4);
+}
+
+function makeSolution(q, qd, w0, gamma) {
+  if (!(w0 > 1e-8)) w0 = 1e-8;
+  if (gamma < 1e-10) {
+    return { kind: "free", B: q, C: qd / w0, omega0: w0, gamma: 0, wd: w0, wh: 0 };
+  }
+  const disc = w0 * w0 - gamma * gamma;
+  if (disc > 1e-8) {
+    const wd = Math.sqrt(disc);
+    return { kind: "under", B: q, C: (qd + gamma * q) / wd, omega0: w0, gamma, wd, wh: 0 };
+  }
+  if (disc > -1e-8) {
+    return { kind: "critical", B: q, C: qd + gamma * q, omega0: w0, gamma, wd: 0, wh: 0 };
+  }
+  const wh = Math.sqrt(-disc);
+  return { kind: "over", B: q, C: (qd + gamma * q) / wh, omega0: w0, gamma, wd: 0, wh };
+}
+
+function evalMotion(sol, t) {
+  const B = sol.B, C = sol.C, w0 = sol.omega0, gamma = sol.gamma;
+  if (sol.kind === "free") {
+    const w = w0;
+    const q = B * Math.cos(w * t) + C * Math.sin(w * t);
+    const qd = -B * w * Math.sin(w * t) + C * w * Math.cos(w * t);
+    return { q, qd, qdd: -w * w * q };
+  }
+  if (sol.kind === "under") {
+    const e = Math.exp(-gamma * t);
+    const ct = Math.cos(sol.wd * t), st = Math.sin(sol.wd * t);
+    const q = e * (B * ct + C * st);
+    const qd = -gamma * q + e * ((-B * st + C * ct) * sol.wd);
+    return { q, qd, qdd: -2 * gamma * qd - w0 * w0 * q };
+  }
+  if (sol.kind === "critical") {
+    const e = Math.exp(-gamma * t);
+    const q = e * (B + C * t);
+    const qd = -gamma * q + e * C;
+    return { q, qd, qdd: -2 * gamma * qd - w0 * w0 * q };
+  }
+  const r1 = -gamma + sol.wh;
+  const r2 = -gamma - sol.wh;
+  const c1 = 0.5 * (B + C);
+  const c2 = 0.5 * (B - C);
+  const e1 = Math.exp(r1 * t);
+  const e2 = Math.exp(r2 * t);
+  const q = c1 * e1 + c2 * e2;
+  const qd = c1 * r1 * e1 + c2 * r2 * e2;
+  return { q, qd, qdd: -2 * gamma * qd - w0 * w0 * q };
+}
+
+function envelopeQ(sol, t) {
+  const base = Math.hypot(sol.B, sol.C);
+  if (sol.kind === "free") return base;
+  if (sol.kind === "under") return base * Math.exp(-sol.gamma * t);
+  return Math.abs(evalMotion(sol, t).q);
+}
+
+function motionAt(tau) {
+  const pend = state.mode === 2;
+  const w0 = omega0();
+  if (!state.useDamp || !state.sol) {
+    const amp = baseAmp();
+    const psi = state.phase + w0 * tau;
+    const q = amp * Math.cos(psi);
+    const qd = -amp * w0 * Math.sin(psi);
+    const qdd = -w0 * w0 * q;
+    return { q, qd, qdd, kind: "free", wd: w0, omega0: w0, gamma: 0, pend };
+  }
+  const t = state.dampT + tau;
+  if (t < -1e-9) return null;
+  const ev = evalMotion(state.sol, Math.max(0, t));
+  return {
+    q: ev.q, qd: ev.qd, qdd: ev.qdd,
+    kind: state.sol.kind, wd: state.sol.wd,
+    omega0: state.sol.omega0, gamma: state.sol.gamma, pend
+  };
+}
+
+function decorate(m) {
+  if (!m) return null;
+  const pend = state.mode === 2;
+  const L = state.L, mMass = state.m, k = state.k, g = state.g;
+  const x = pend ? L * m.q : m.q;
+  const v = pend ? L * m.qd : m.qd;
+  const a = pend ? L * m.qdd : m.qdd;
+  const kEff = pend ? (mMass * g / L) : k;
+  const F = -kEff * x;
+  const Fd = -state.b * v;
+  const Ek = 0.5 * mMass * v * v;
+  const Ep = 0.5 * kEff * x * x;
+  const envQ = state.useDamp && state.sol ? envelopeQ(state.sol, state.dampT) : Math.abs(baseAmp());
+  const Aenv = pend ? L * envQ : envQ;
+  const Aview = viewAmp();
+  const wRef = m.kind === "under" && m.wd > 1e-8 ? m.wd : m.omega0;
+  const T = (m.kind === "free") ? TAU / m.omega0 : (m.kind === "under" ? TAU / m.wd : NaN);
+  let psi = 0;
+  const R = Math.max(envQ, 1e-9);
+  const s = clamp(-(m.qd) / (R * Math.max(wRef, 1e-9)), -1, 1);
+  const c = clamp(m.q / R, -1, 1);
+  psi = Math.atan2(s, c);
+  if (psi < 0) psi += TAU;
+  return {
+    q: m.q, qd: m.qd, qdd: m.qdd, x, v, a, F, Fd, Fnet: F + Fd,
+    Ek, Ep, E: Ek + Ep, kEff, pend, kind: m.kind, wd: m.wd,
+    omega0: m.omega0, gamma: m.gamma, T, f: Number.isFinite(T) ? 1 / T : NaN,
+    Aenv, Aview, psi, wRef,
+    vmax: m.omega0 * Aview, amax: m.omega0 * m.omega0 * Aview,
+    E0: 0.5 * kEff * Aview * Aview,
+    thetaDeg: m.q * 180 / Math.PI,
+    delta: mMass * g / k,
+    Y: m.omega0 > 0 ? -v / m.omega0 : 0
+  };
+}
+
+function getKinematics() {
+  return decorate(motionAt(0));
+}
+
+function sampleRelative(tau) {
+  const m = motionAt(tau);
+  if (!m) return null;
+  const pend = state.mode === 2;
+  return {
+    x: pend ? state.L * m.q : m.q,
+    v: pend ? state.L * m.qd : m.qd,
+    a: pend ? state.L * m.qdd : m.qdd
+  };
+}
+
+function advance(dt) {
+  if (dt <= 0) return;
+  state.clock += dt;
+  if (!state.useDamp) {
+    state.phase = (state.phase + omega0() * dt) % TAU;
+    if (state.phase < 0) state.phase += TAU;
+  } else {
+    state.dampT += dt;
+  }
+}
+
+function resetMotion() {
+  state.clock = 0;
+  state.phase = 0;
+  state.liveAmp = null;
+  state.dampT = 0;
+  state.trail = [];
+  state.zone = "amp";
+  state.useDamp = state.b > 0;
+  if (state.useDamp) state.sol = makeSolution(sliderQ(), 0, omega0(), gammaOf());
+  else state.sol = null;
+}
+
+function prep(canvas) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  const W = Math.floor(w * dpr), H = Math.floor(h * dpr);
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W;
+    canvas.height = H;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+function text(ctx, str, x, y, opt) {
+  opt = opt || {};
+  ctx.font = (opt.size || 12) + "px Leelawadee UI, Tahoma, sans-serif";
+  ctx.textAlign = opt.align || "left";
+  ctx.textBaseline = opt.base || "middle";
+  if (opt.halo !== false) {
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(8,12,22,0.82)";
+    ctx.strokeText(str, x, y);
+  }
+  ctx.fillStyle = opt.color || C.text;
+  ctx.fillText(str, x, y);
+}
+
+function arrow(ctx, x1, y1, x2, y2, color) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 3) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const ang = Math.atan2(dy, dx);
+  const h = 9;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - h * Math.cos(ang - 0.38), y2 - h * Math.sin(ang - 0.38));
+  ctx.lineTo(x2 - h * Math.cos(ang + 0.38), y2 - h * Math.sin(ang + 0.38));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function coil(ctx, x1, y1, x2, y2, turns, width) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const px = -uy, py = ux;
+  const lead = Math.min(16, len * 0.14);
+  const usable = Math.max(1, len - 2 * lead);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 + ux * lead, y1 + uy * lead);
+  const steps = Math.max(8, turns * 8);
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const side = Math.sin(t * turns * TAU) * width;
+    ctx.lineTo(x1 + ux * (lead + usable * t) + px * side, y1 + uy * (lead + usable * t) + py * side);
+  }
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+  else {
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+}
+
+function drawGrid(ctx, w, h) {
+  ctx.save();
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#0c1220";
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 1;
+  const step = 28;
+  ctx.beginPath();
+  for (let x = 0; x <= w; x += step) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h); }
+  for (let y = 0; y <= h; y += step) { ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function pxFromAmp(boxW, amp) {
+  return clamp((boxW * 0.24) / Math.max(amp, 0.08), 70, 420);
+}
+
+function drawVectors(ctx, x0, y0, kin, axis, px) {
+  if (!state.showVec) return;
+  const vmax = Math.max(kin.vmax, 1e-6);
+  const amax = Math.max(kin.amax, 1e-6);
+  const Fmax = Math.max(Math.abs(kin.kEff * kin.Aview), 1e-6);
+  const maxPx = 78;
+  const parts = [
+    { name: "v", val: kin.v, ref: vmax, color: C.v, off: -16 },
+    { name: "a", val: kin.a, ref: amax, color: C.a, off: 0 },
+    { name: "F", val: kin.F, ref: Fmax, color: C.f, off: 16 }
+  ];
+  parts.forEach((p) => {
+    const len = (p.val / p.ref) * maxPx;
+    if (axis === "h") {
+      arrow(ctx, x0, y0 + p.off, x0 + len, y0 + p.off, p.color);
+      if (Math.abs(len) >= 3) text(ctx, p.name, x0 + len + (len >= 0 ? 8 : -8), y0 + p.off, { size: 12, color: p.color, align: len >= 0 ? "left" : "right" });
+    } else {
+      arrow(ctx, x0 + p.off, y0, x0 + p.off, y0 + len, p.color);
+      if (Math.abs(len) >= 3) text(ctx, p.name, x0 + p.off, y0 + len + (len >= 0 ? 12 : -12), { size: 12, color: p.color, align: "center" });
+    }
+  });
+  if (px) {
+    const xPx = kin.x * px;
+    if (Math.abs(xPx) > 4) {
+      if (axis === "h") {
+        arrow(ctx, x0 - xPx, y0 - 42, x0, y0 - 42, C.x);
+        text(ctx, "x", x0 - xPx / 2, y0 - 54, { size: 12, color: C.x, align: "center" });
+      } else {
+        arrow(ctx, x0 - 48, y0 - xPx, x0 - 48, y0, C.x);
+        text(ctx, "x", x0 - 62, y0 - xPx / 2, { size: 12, color: C.x, align: "center" });
+      }
+    }
+  }
+}
+
+function drawEnergyBars(ctx, x, y, w, h, kin) {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 12);
+  ctx.fillStyle = "rgba(8,12,22,0.82)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(140,160,190,0.25)";
+  ctx.stroke();
+  text(ctx, "พลังงาน", x + 10, y + 14, { size: 12, align: "left", base: "middle", halo: false, color: C.muted });
+  const maxE = Math.max(kin.E0, kin.E, 1e-8);
+  const items = [["Ek", kin.Ek, C.ek], ["Ep", kin.Ep, C.ep], ["E", kin.E, C.et]];
+  const gap = 8;
+  const bw = (w - 20 - gap * 2) / 3;
+  const base = y + h - 22;
+  const bh = h - 48;
+  items.forEach((it, i) => {
+    const bx = x + 10 + i * (bw + gap);
+    const fill = clamp(it[1] / maxE, 0, 1) * bh;
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    roundRect(ctx, bx, base - bh, bw, bh, 6);
+    ctx.fill();
+    ctx.fillStyle = it[2];
+    roundRect(ctx, bx, base - fill, bw, Math.max(fill, 0), 6);
+    ctx.fill();
+    text(ctx, it[0], bx + bw / 2, y + 32, { size: 11, align: "center", halo: false, color: it[2] });
+    text(ctx, fmt(it[1], 2), bx + bw / 2, base + 10, { size: 10, align: "center", halo: false, color: C.text });
+  });
+  ctx.restore();
+}
+
+function drawScale(ctx, x, y, pxPerM) {
+  let meters = 0.1;
+  if (meters * pxPerM < 36) meters = 0.2;
+  if (meters * pxPerM < 36) meters = 0.5;
+  if (meters * pxPerM > 140) meters = 0.05;
+  const px = meters * pxPerM;
+  ctx.save();
+  ctx.strokeStyle = C.text;
+  ctx.fillStyle = C.text;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + px, y);
+  ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4);
+  ctx.moveTo(x + px, y - 4); ctx.lineTo(x + px, y + 4);
+  ctx.stroke();
+  text(ctx, meters.toFixed(2) + " m", x + px / 2, y + 12, { size: 11, align: "center", color: C.muted });
+  ctx.restore();
+}
+
+function drawMassBlock(ctx, x, y, m) {
+  const hw = clamp(22 + Math.sqrt(m) * 6, 22, 40);
+  const hh = clamp(16 + Math.sqrt(m) * 4, 16, 30);
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.beginPath();
+  ctx.ellipse(x, y + hh + 8, hw * 0.8, 5, 0, 0, TAU);
+  ctx.fill();
+  const g = ctx.createLinearGradient(x, y - hh, x, y + hh);
+  g.addColorStop(0, "#8ff3e4");
+  g.addColorStop(1, "#147a78");
+  ctx.fillStyle = g;
+  roundRect(ctx, x - hw, y - hh, hw * 2, hh * 2, 8);
+  ctx.fill();
+  text(ctx, m.toFixed(1) + " kg", x, y, { size: 12, align: "center", color: "#04221f", halo: false });
+  ctx.restore();
+  return { hw, hh };
+}
+
+function drawSpringSystem(ctx, box, kin, orient, compact) {
+  const amp = kin.Aview;
+  const px = pxFromAmp(orient === "h" ? box.w : box.h, amp);
+  if (orient === "h") {
+    const travel = amp * px;
+    const cy = box.y + box.h * (compact ? 0.62 : 0.58);
+    const eqX = box.x + Math.min(box.w * 0.58, box.w - travel - 36);
+    const massX = eqX + kin.x * px;
+    const wallX = Math.max(box.x + 18, eqX - Math.max(150, travel + 80));
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    ctx.moveTo(eqX, box.y + 28);
+    ctx.lineTo(eqX, box.y + box.h - 24);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const aPx = amp * px;
+    ctx.strokeStyle = "rgba(61,222,200,0.35)";
+    ctx.setLineDash([2, 5]);
+    ctx.beginPath();
+    ctx.moveTo(eqX - aPx, cy - 34);
+    ctx.lineTo(eqX - aPx, cy + 34);
+    ctx.moveTo(eqX + aPx, cy - 34);
+    ctx.lineTo(eqX + aPx, cy + 34);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    text(ctx, "−A", eqX - aPx, cy - 46, { size: 11, align: "center", color: C.x });
+    text(ctx, "+A", eqX + aPx, cy - 46, { size: 11, align: "center", color: C.x });
+    text(ctx, "สมดุล", eqX, box.y + 16, { size: 12, align: "center", color: C.muted });
+    ctx.strokeStyle = "#8ea2c4";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(wallX - 8, cy - 70);
+    ctx.lineTo(wallX - 8, cy + 70);
+    ctx.stroke();
+    ctx.strokeStyle = "#6f84a8";
+    ctx.lineWidth = 2;
+    for (let i = -60; i <= 60; i += 12) {
+      ctx.beginPath();
+      ctx.moveTo(wallX - 16, cy + i);
+      ctx.lineTo(wallX - 4, cy + i + 8);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "#d5e2f4";
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    coil(ctx, wallX, cy, massX - 28, cy, 12, 11);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(box.x + 20, cy + 46);
+    ctx.lineTo(box.x + box.w - 20, cy + 46);
+    ctx.stroke();
+    if (state.trail.length > 1) {
+      ctx.fillStyle = C.x;
+      state.trail.forEach((p, i) => {
+        ctx.globalAlpha = (i / state.trail.length) * 0.45;
+        ctx.beginPath();
+        ctx.arc(eqX + p.x * px, cy, 2.2, 0, TAU);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+    drawMassBlock(ctx, massX, cy, state.m);
+    drawVectors(ctx, massX, cy, kin, "h", px);
+    drawScale(ctx, box.x + 16, box.y + box.h - 16, px);
+    ctx.restore();
+    return;
+  }
+  const travel = amp * px;
+  const eqY = box.y + box.h * 0.58;
+  const massY = eqY + kin.x * px;
+  const ceilY = Math.max(box.y + 28, eqY - Math.max(130, travel + 70));
+  ctx.save();
+  ctx.fillStyle = "#8ea2c4";
+  ctx.fillRect(box.x + 40, ceilY - 8, box.w - 80, 8);
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(box.x + 30, eqY);
+  ctx.lineTo(box.x + box.w - 30, eqY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  text(ctx, "สมดุล x = 0", box.x + 16, Math.max(box.y + 18, eqY - 14), { size: 12, color: C.muted });
+  const dPx = clamp(kin.delta * px, 0, 80);
+  if (dPx > 6) {
+    ctx.strokeStyle = "rgba(255,176,32,0.7)";
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(box.x + 24, eqY - dPx);
+    ctx.lineTo(box.x + box.w - 24, eqY - dPx);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    text(ctx, "ความยาวธรรมชาติ", box.x + 28, eqY - dPx - 10, { size: 11, color: C.v });
+  }
+  text(ctx, "δ = mg/k = " + fmt(kin.delta, 3) + " m", box.x + 16, box.y + 36, { size: 12, color: C.v });
+  ctx.strokeStyle = "#d5e2f4";
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round";
+  coil(ctx, box.x + box.w / 2, ceilY, box.x + box.w / 2, massY - 26, 14, 12);
+  const cx = box.x + box.w / 2;
+  drawMassBlock(ctx, cx, massY, state.m);
+  drawVectors(ctx, cx, massY, kin, "v", px);
+  text(ctx, "x บวกชี้ลง", box.x + box.w - 16, box.y + 18, { size: 11, align: "right", color: C.muted });
+  ctx.restore();
+}
+
+function drawPendulum(ctx, w, h, kin) {
+  const pivotX = w * 0.58;
+  const pivotY = 42;
+  const maxAng = Math.max(Math.abs(state.theta0) * Math.PI / 180, 0.12);
+  const availH = h - 78;
+  const availW = w * 0.62;
+  let Lpx = Math.min(availH * 0.86, (availW * 0.48) / Math.sin(Math.min(maxAng + 0.08, 1.1)));
+  Lpx = clamp(Lpx, 90, availH);
+  const th = kin.q;
+  const bobX = pivotX + Lpx * Math.sin(th);
+  const bobY = pivotY + Lpx * Math.cos(th);
+  const eqX = pivotX;
+  const eqY = pivotY + Lpx;
+  ctx.save();
+  ctx.strokeStyle = "rgba(61,222,200,0.25)";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.arc(pivotX, pivotY, Lpx, Math.PI / 2 - maxAng, Math.PI / 2 + maxAng);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,0.2)";
+  ctx.setLineDash([4, 6]);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(pivotX, pivotY);
+  ctx.lineTo(pivotX, pivotY + Lpx + 16);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  const ticks = [-30, -20, -10, 10, 20, 30];
+  ticks.forEach((deg) => {
+    const a = deg * Math.PI / 180;
+    const r1 = 36, r2 = Math.abs(deg) === 10 ? 58 : 48;
+    ctx.strokeStyle = Math.abs(deg) === 10 ? C.ek : "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.moveTo(pivotX + r1 * Math.sin(a), pivotY + r1 * Math.cos(a));
+    ctx.lineTo(pivotX + r2 * Math.sin(a), pivotY + r2 * Math.cos(a));
+    ctx.stroke();
+  });
+  text(ctx, "±10°", pivotX + 64, pivotY + 28, { size: 11, color: C.ek });
+  ctx.strokeStyle = "#e7eefc";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pivotX, pivotY);
+  ctx.lineTo(bobX, bobY);
+  ctx.stroke();
+  ctx.fillStyle = "#d5e2f4";
+  ctx.beginPath();
+  ctx.arc(pivotX, pivotY, 5, 0, TAU);
+  ctx.fill();
+  if (Math.abs(th) > 0.01) {
+    ctx.strokeStyle = C.x;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const a0 = Math.PI / 2;
+    const a1 = Math.PI / 2 - th;
+    ctx.arc(pivotX, pivotY, 28, Math.min(a0, a1), Math.max(a0, a1));
+    ctx.stroke();
+    text(ctx, fmt(kin.thetaDeg, 1) + "°", pivotX + 36 * Math.sin(th / 2), pivotY + 36 * Math.cos(th / 2), { size: 12, color: C.x, align: "center" });
+  }
+  state.trail.forEach((p, i) => {
+    const bx = pivotX + Lpx * Math.sin(p.q);
+    const by = pivotY + Lpx * Math.cos(p.q);
+    ctx.globalAlpha = (i / state.trail.length) * 0.5;
+    ctx.fillStyle = C.x;
+    ctx.beginPath();
+    ctx.arc(bx, by, 2.2, 0, TAU);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  const r = clamp(15 + Math.sqrt(state.m) * 7, 15, 36);
+  const g = ctx.createRadialGradient(bobX - r * 0.3, bobY - r * 0.35, 2, bobX, bobY, r);
+  g.addColorStop(0, "#f4f8ff");
+  g.addColorStop(0.4, "#8eb6ff");
+  g.addColorStop(1, "#243e86");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(bobX, bobY, r, 0, TAU);
+  ctx.fill();
+  text(ctx, state.m.toFixed(1) + " kg", bobX, bobY + r + 14, { size: 12, align: "center" });
+  text(ctx, "L = " + fmt(state.L, 2) + " m", pivotX + 12, (pivotY + bobY) / 2, { size: 13, color: C.text });
+  const tx = Math.cos(th), ty = -Math.sin(th);
+  const nx = Math.sin(th), ny = Math.cos(th);
+  if (state.showVec) {
+    const vmax = Math.max(kin.vmax, 1e-6);
+    const amax = Math.max(kin.amax, 1e-6);
+    const Fmax = Math.max(Math.abs(kin.kEff * kin.Aview), 1e-6);
+    const specs = [
+      ["v", kin.v, vmax, C.v, -14],
+      ["a", kin.a, amax, C.a, 0],
+      ["F", kin.F, Fmax, C.f, 14]
+    ];
+    specs.forEach((s) => {
+      const len = (s[1] / s[2]) * 70;
+      const x1 = bobX + nx * s[4];
+      const y1 = bobY + ny * s[4];
+      arrow(ctx, x1, y1, x1 + tx * len, y1 + ty * len, s[3]);
+      if (Math.abs(len) > 4) text(ctx, s[0], x1 + tx * len + (len >= 0 ? 10 : -10) * tx, y1 + ty * len, { size: 12, color: s[3], align: "center" });
+    });
+    arrow(ctx, eqX, eqY, bobX, bobY, C.x);
+    text(ctx, "x", (eqX + bobX) / 2, (eqY + bobY) / 2 - 12, { size: 12, color: C.x, align: "center" });
+  }
+  const rulerX = 28;
+  const rulerTop = 56;
+  const rulerH = h - 100;
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(rulerX, rulerTop);
+  ctx.lineTo(rulerX, rulerTop + rulerH);
+  ctx.stroke();
+  for (let m = 0; m <= 5; m++) {
+    const y = rulerTop + (m / 5) * rulerH;
+    ctx.beginPath();
+    ctx.moveTo(rulerX - 5, y);
+    ctx.lineTo(rulerX + (m % 1 === 0 ? 8 : 4), y);
+    ctx.stroke();
+    if (m % 1 === 0) text(ctx, String(m), rulerX + 12, y, { size: 10, color: C.muted });
+  }
+  const yL = rulerTop + (state.L / 5) * rulerH;
+  ctx.strokeStyle = C.x;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(rulerX + 16, rulerTop);
+  ctx.lineTo(rulerX + 16, yL);
+  ctx.stroke();
+  text(ctx, "สเกล L จริง (m)", rulerX, rulerTop - 16, { size: 11, color: C.muted });
+  ctx.restore();
+}
+
+function drawReference(ctx, w, h, kin) {
+  const gutter = state.showEnergy ? 150 : 20;
+  const Rmax = Math.min((w - gutter) * 0.22, h * 0.26);
+  const R = clamp(Rmax * (kin.Aview / 0.55), 48, Rmax);
+  const px = R / kin.Aview;
+  const cx = (w - gutter) * 0.48 + 10;
+  const cy = h * 0.36;
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, TAU);
+  ctx.moveTo(cx - R - 16, cy);
+  ctx.lineTo(cx + R + 16, cy);
+  ctx.moveTo(cx, cy - R - 12);
+  ctx.lineTo(cx, cy + R + 16);
+  ctx.stroke();
+  text(ctx, "x", cx + R + 22, cy, { size: 13, color: C.x });
+  text(ctx, "−v/ω", cx, cy - R - 18, { size: 13, color: C.v, align: "center" });
+  const pxX = cx + kin.x * px;
+  const pxY = cy - kin.Y * px;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = "rgba(61,222,200,0.8)";
+  ctx.beginPath();
+  ctx.moveTo(pxX, pxY);
+  ctx.lineTo(pxX, cy);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,176,32,0.75)";
+  ctx.beginPath();
+  ctx.moveTo(pxX, pxY);
+  ctx.lineTo(cx, pxY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = C.et;
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(pxX, pxY);
+  ctx.stroke();
+  ctx.fillStyle = C.et;
+  ctx.beginPath();
+  ctx.arc(pxX, pxY, 6, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = C.x;
+  ctx.beginPath();
+  ctx.arc(pxX, cy, 5, 0, TAU);
+  ctx.fill();
+  const canvasAng = Math.atan2(pxY - cy, pxX - cx);
+  if (Math.abs(canvasAng) > 0.08) {
+    ctx.strokeStyle = "rgba(240,208,96,0.9)";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 22, 0, canvasAng, true);
+    ctx.stroke();
+  }
+  text(ctx, "ψ", cx + 30, cy - 12, { size: 13, color: C.et });
+  text(ctx, "ω คงตัว", cx, cy + 8, { size: 12, align: "center", color: C.muted });
+  const trackY = h * 0.78;
+  const origin = cx;
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(origin - R - 10, trackY);
+  ctx.lineTo(origin + R + 30, trackY);
+  ctx.stroke();
+  ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = "rgba(61,222,200,0.45)";
+  ctx.beginPath();
+  ctx.moveTo(pxX, cy);
+  ctx.lineTo(pxX, trackY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "#d5e2f4";
+  ctx.lineWidth = 2;
+  coil(ctx, origin - R - 8, trackY, pxX - 20, trackY, 9, 8);
+  drawMassBlock(ctx, pxX, trackY, state.m);
+  text(ctx, "เงาบนแกน SHM", origin, trackY + 42, { size: 12, align: "center", color: C.muted });
+  if (state.showVec) drawVectors(ctx, pxX, trackY, kin, "h", null);
+  ctx.restore();
+}
+
+function drawEnergyMode(ctx, w, h, kin) {
+  drawSpringSystem(ctx, { x: 8, y: 8, w: w * 0.56, h: h - 16 }, kin, "h", true);
+  const cx = w * 0.78;
+  const cy = h * 0.34;
+  const R = Math.min(w * 0.16, h * 0.24);
+  const px = R / kin.Aview;
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, TAU);
+  ctx.moveTo(cx - R - 8, cy);
+  ctx.lineTo(cx + R + 8, cy);
+  ctx.moveTo(cx, cy - R - 8);
+  ctx.lineTo(cx, cy + R + 8);
+  ctx.stroke();
+  const pxX = cx + kin.x * px;
+  const pxY = cy - kin.Y * px;
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = C.x;
+  ctx.beginPath();
+  ctx.moveTo(pxX, pxY);
+  ctx.lineTo(pxX, cy);
+  ctx.lineTo(cx, cy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = C.et;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(pxX, pxY);
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(pxX, pxY, 5, 0, TAU);
+  ctx.fill();
+  text(ctx, "เฟสเซอร์", cx, cy - R - 16, { size: 12, align: "center", color: C.et });
+  text(ctx, "x", pxX, cy + 14, { size: 12, align: "center", color: C.x });
+  drawEnergyBars(ctx, w * 0.60, h * 0.58, w * 0.36, h * 0.36, kin);
+  ctx.restore();
+}
+
+function drawSimulation(ctx, w, h, kin) {
+  drawGrid(ctx, w, h);
+  if (state.mode === 1) {
+    drawSpringSystem(ctx, { x: 0, y: 0, w: state.showEnergy ? w - 160 : w, h }, kin, state.orient, false);
+  } else if (state.mode === 2) {
+    drawPendulum(ctx, state.showEnergy ? w - 150 : w, h, kin);
+  } else if (state.mode === 3) {
+    drawReference(ctx, w, h, kin);
+  } else {
+    drawEnergyMode(ctx, w, h, kin);
+  }
+  if (state.showEnergy && state.mode !== 4) {
+    drawEnergyBars(ctx, w - 156, 12, 146, 168, kin);
+  }
+  if (state.showVec) {
+    const items = [["x", C.x], ["v", C.v], ["a", C.a], ["F", C.f]];
+    items.forEach((it, i) => {
+      const x = 16 + i * 46;
+      const y = h - 28;
+      ctx.fillStyle = it[1];
+      ctx.fillRect(x, y, 10, 10);
+      text(ctx, it[0], x + 14, y + 5, { size: 12, color: it[1], halo: false });
+    });
+  }
+}
+
+function axisMap(v, v0, v1, p0, p1) {
+  return p0 + ((v - v0) / (v1 - v0 || 1)) * (p1 - p0);
+}
+
+function drawTimeGraph(ctx, w, h, kin) {
+  const padL = 54, padR = 12, padT = 12, padB = 26;
+  const period = Number.isFinite(kin.T) && kin.T > 0.05 ? kin.T : Math.min(8, TAU / Math.max(kin.omega0, 0.3));
+  const span = clamp(2.4 * period, 0.4, 28);
+  const rel0 = -span * 0.78;
+  const rel1 = span * 0.22;
+  const series = [
+    { name: "x (m)", color: C.x, max: Math.max(kin.Aview, 1e-4) * 1.25, pick: (s) => s.x },
+    { name: "v (m/s)", color: C.v, max: Math.max(kin.vmax, 1e-4) * 1.25, pick: (s) => s.v },
+    { name: "a (m/s²)", color: C.a, max: Math.max(kin.amax, 1e-4) * 1.25, pick: (s) => s.a }
+  ];
+  const gap = 6;
+  const bandH = (h - padT - padB - gap * 2) / 3;
+  const plotW = w - padL - padR;
+  series.forEach((ser, i) => {
+    const top = padT + i * (bandH + gap);
+    ctx.fillStyle = "rgba(255,255,255,0.02)";
+    ctx.fillRect(padL, top, plotW, bandH);
+    const mid = top + bandH / 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.beginPath();
+    ctx.moveTo(padL, mid);
+    ctx.lineTo(padL + plotW, mid);
+    ctx.stroke();
+    const N = 240;
+    ctx.lineWidth = 1.8;
+    function strokeRange(a, b, dash) {
+      ctx.beginPath();
+      let started = false;
+      ctx.setLineDash(dash);
+      for (let n = 0; n <= N; n++) {
+        const tau = a + (b - a) * (n / N);
+        if (tau < a - 1e-9 || tau > b + 1e-9) continue;
+        const s = sampleRelative(tau);
+        if (!s) { started = false; continue; }
+        const X = axisMap(tau, rel0, rel1, padL, padL + plotW);
+        const Y = axisMap(ser.pick(s), ser.max, -ser.max, top + 4, top + bandH - 4);
+        if (!started) { ctx.moveTo(X, Y); started = true; }
+        else ctx.lineTo(X, Y);
+      }
+      ctx.strokeStyle = ser.color;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    strokeRange(rel0, 0, []);
+    strokeRange(0, rel1, [4, 4]);
+    const nowX = axisMap(0, rel0, rel1, padL, padL + plotW);
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.moveTo(nowX, top);
+    ctx.lineTo(nowX, top + bandH);
+    ctx.stroke();
+    const cur = sampleRelative(0);
+    if (cur) {
+      const Y = axisMap(ser.pick(cur), ser.max, -ser.max, top + 4, top + bandH - 4);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(nowX, Y, 3.3, 0, TAU);
+      ctx.fill();
+    }
+    text(ctx, ser.name, 6, mid, { size: 11, color: ser.color, halo: false });
+    text(ctx, fmt(ser.max / 1.25, 2), padL + 4, top + 8, { size: 10, color: C.muted, halo: false });
+  });
+  for (let k = 0; k <= 4; k++) {
+    const tau = rel0 + (rel1 - rel0) * (k / 4);
+    const X = axisMap(tau, rel0, rel1, padL, padL + plotW);
+    text(ctx, fmt(tau, span > 8 ? 1 : 2), X, h - 10, { size: 10, align: "center", color: C.muted, halo: false });
+  }
+  text(ctx, "เวลาเทียบกับขณะนี้ (s)", w - 8, h - 10, { size: 10, align: "right", color: C.muted, halo: false });
+}
+
+function drawEnergyGraph(ctx, w, h, kin) {
+  const padL = 54, padR = 16, padT = 16, padB = 32;
+  const xMax = kin.Aview * 1.15;
+  const yMax = Math.max(kin.E0, kin.E, 1e-8) * 1.2;
+  const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.beginPath();
+  ctx.moveTo(x0, y1);
+  ctx.lineTo(x0, y0);
+  ctx.lineTo(x1, y0);
+  ctx.stroke();
+  const X = (x) => axisMap(x, -xMax, xMax, x0, x1);
+  const Y = (e) => axisMap(e, 0, yMax, y0, y1);
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.moveTo(X(0), y0);
+  ctx.lineTo(X(0), y1);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  function curve(fn, color, width) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    for (let i = 0; i <= 80; i++) {
+      const x = -kin.Aview + (2 * kin.Aview) * (i / 80);
+      const y = fn(x);
+      const px = X(x), py = Y(y);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  const A = Math.max(kin.Aenv, 0);
+  curve((x) => 0.5 * kin.kEff * x * x, C.ep, 2);
+  if (kin.kind === "free" || kin.kind === "under") {
+    curve((x) => Math.max(0, 0.5 * kin.kEff * (A * A - x * x)), C.ek, 2);
+    ctx.strokeStyle = C.et;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(X(-kin.Aview), Y(0.5 * kin.kEff * A * A));
+    ctx.lineTo(X(kin.Aview), Y(0.5 * kin.kEff * A * A));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  const dots = [[kin.Ep, C.ep], [kin.Ek, C.ek], [kin.E, C.et]];
+  dots.forEach((d) => {
+    ctx.fillStyle = d[1];
+    ctx.beginPath();
+    ctx.arc(X(kin.x), Y(d[0]), 4.5, 0, TAU);
+    ctx.fill();
+  });
+  text(ctx, "x (m)", w - 12, h - 12, { size: 11, align: "right", color: C.muted, halo: false });
+  text(ctx, "E (J)", 8, 12, { size: 11, color: C.muted, halo: false });
+  text(ctx, "Ep", X(kin.Aview * 0.72), Y(0.5 * kin.kEff * kin.Aview * kin.Aview * 0.5), { size: 12, color: C.ep });
+  text(ctx, "Ek", X(0), Y(Math.max(kin.E0 * 0.92, kin.E * 0.92)), { size: 12, color: C.ek, align: "center" });
+}
+
+function drawPhaseGraph(ctx, w, h, kin) {
+  const padL = 54, padR = 16, padT = 16, padB = 32;
+  const xMax = kin.Aview * 1.25;
+  const vMax = Math.max(kin.vmax, 1e-4) * 1.25;
+  const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+  const X = (x) => axisMap(x, -xMax, xMax, x0, x1);
+  const Y = (v) => axisMap(v, -vMax, vMax, y0, y1);
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.beginPath();
+  ctx.moveTo(x0, Y(0));
+  ctx.lineTo(x1, Y(0));
+  ctx.moveTo(X(0), y0);
+  ctx.lineTo(X(0), y1);
+  ctx.stroke();
+  if (kin.kind === "free" || kin.kind === "under") {
+    const A = Math.max(kin.Aenv, 0);
+    const wOsc = kin.kind === "under" ? kin.wd : kin.omega0;
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(61,222,200,0.85)";
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i <= 120; i++) {
+      const psi = TAU * (i / 120);
+      const x = A * Math.cos(psi);
+      const v = -wOsc * A * Math.sin(psi);
+      const px = X(x), py = Y(v);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  if (state.trail.length > 1) {
+    ctx.beginPath();
+    state.trail.forEach((p, i) => {
+      const px = X(p.x), py = Y(p.v);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.strokeStyle = "rgba(255,176,32,0.85)";
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(X(kin.x), Y(kin.v), 5, 0, TAU);
+  ctx.fill();
+  text(ctx, "x (m)", w - 10, Y(0) - 8, { size: 11, align: "right", color: C.x, halo: false });
+  text(ctx, "v (m/s)", X(0) + 8, 14, { size: 11, color: C.v, halo: false });
+  if (kin.kind === "over" || kin.kind === "critical") {
+    text(ctx, "ไม่ครบรอบ จึงไม่มีวงรีปิด", w / 2, h / 2, { size: 13, align: "center", color: C.muted });
+  }
+}
+
+function drawGraph(ctx, w, h, kin) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#0c1220";
+  ctx.fillRect(0, 0, w, h);
+  if (state.graph === "time") drawTimeGraph(ctx, w, h, kin);
+  else if (state.graph === "energy") drawEnergyGraph(ctx, w, h, kin);
+  else drawPhaseGraph(ctx, w, h, kin);
+}
+
+function updateZone(kin) {
+  if (kin.kind === "over" || kin.kind === "critical") {
+    const settled = Math.abs(kin.x) < 0.12 * kin.Aview && Math.abs(kin.v) < 0.08 * Math.max(kin.vmax, 1e-6);
+    state.zone = settled ? "eq" : "mid";
+    return;
+  }
+  const r = Math.abs(kin.x) / Math.max(kin.Aenv, 1e-6);
+  const z = state.zone;
+  if (z === "eq") state.zone = r > 0.30 ? (r > 0.78 ? "amp" : "mid") : "eq";
+  else if (z === "amp") state.zone = r < 0.68 ? (r < 0.18 ? "eq" : "mid") : "amp";
+  else state.zone = r < 0.15 ? "eq" : (r > 0.88 ? "amp" : "mid");
+}
+
+function planetName() {
+  if (Math.abs(state.g - 9.81) < 0.03) return "โลก";
+  if (Math.abs(state.g - 1.62) < 0.03) return "ดวงจันทร์";
+  if (Math.abs(state.g - 24.79) < 0.03) return "ดาวพฤหัสบดี";
+  return "ค่าที่ตั้งเอง";
+}
+
+function modeName() {
+  return ["", "ระบบมวลติดสปริง", "ลูกตุ้มอย่างง่าย", "วงกลมอ้างอิง", "พลังงานและเฟสเซอร์"][state.mode];
+}
+
+function updateReadout(kin) {
+  document.getElementById("badge-mode").textContent = modeName();
+  document.getElementById("badge-time").textContent = "t = " + fmt(state.clock, 2) + " s";
+  document.getElementById("badge-damp").hidden = !(state.b > 0);
+  document.getElementById("badge-damp").textContent = kin.kind === "over" ? "หน่วงเกิน ไม่วนครบรอบ" : (kin.kind === "critical" ? "หน่วงวิกฤต" : "มีความหน่วง");
+  const big = state.mode === 2 && Math.abs(state.theta0) > 10;
+  document.getElementById("badge-angle").hidden = !big;
+  document.getElementById("badge-angle").textContent = "θ₀ > 10° ใช้ sinθ ≈ θ";
+  document.getElementById("badge-live").hidden = state.liveAmp == null;
+  document.getElementById("badge-live").textContent = "แอมพลิจูดต่อเนื่อง ไม่ตรงสไลเดอร์";
+  const vertical = state.mode === 1 && state.orient === "v";
+  const dir = kin.v > 0.02 ? (vertical ? "ลง" : "ไปทางขวา") : kin.v < -0.02 ? (vertical ? "ขึ้น" : "ไปทางซ้าย") : "";
+  const motion = dir ? "กำลังเคลื่อนที่" + dir : "ความเร็วเกือบเป็นศูนย์";
+  const where = state.zone === "eq" ? "ใกล้ตำแหน่งสมดุล" : state.zone === "amp" ? (kin.x >= 0 ? "ใกล้แอมพลิจูดด้านบวก" : "ใกล้แอมพลิจูดด้านลบ") : "ระหว่างสมดุลกับแอมพลิจูด";
+  const share = kin.E > 1e-8 ? Math.round(100 * kin.Ek / kin.E) : 0;
+  document.getElementById("insight").textContent = where + " · " + motion + " · พลังงานจลน์ " + share + "% · พลังงานศักย์ " + (kin.E > 1e-8 ? 100 - share : 0) + "% ของพลังงานกล";
+
+  const cards = [
+    ["x", "การกระจัด x", fmt(kin.x, 3) + " m", "x"],
+    ["v", "ความเร็ว v", fmt(kin.v, 3) + " m/s", "v"],
+    ["a", "ความเร่ง a", fmt(kin.a, 3) + " m/s²", "a"],
+    ["F", "แรงดึงกลับ F", fmt(kin.F, 3) + " N", "f"],
+    ["w", "ω", fmt(kin.kind === "under" ? kin.wd : kin.omega0, 3) + " rad/s", ""],
+    ["T", "คาบ T", Number.isFinite(kin.T) ? fmt(kin.T, 3) + " s" : "—", ""],
+    ["f", "ความถี่ f", Number.isFinite(kin.f) ? fmt(kin.f, 3) + " Hz" : "—", ""],
+    ["Ek", "พลังงานจลน์", fmt(kin.Ek, 3) + " J", "ek"],
+    ["Ep", "พลังงานศักย์", fmt(kin.Ep, 3) + " J", "ep"],
+    ["E", "พลังงานกล", fmt(kin.E, 3) + " J", "et"]
+  ];
+  cards.forEach((c) => {
+    const el = document.getElementById("card-" + c[0]);
+    el.querySelector(".v").textContent = c[2];
+    el.classList.toggle("hot", (state.zone === "eq" && (c[0] === "v" || c[0] === "a")) || (state.zone === "amp" && (c[0] === "x" || c[0] === "a" || c[0] === "F")));
+  });
+
+  const pend = state.mode === 2;
+  const wSym = pend ? "√(g/L)" : "√(k/m)";
+  const wNum = pend ? "√(" + fmt(state.g, 2) + "/" + fmt(state.L, 2) + ")" : "√(" + fmt(state.k, 0) + "/" + fmt(state.m, 1) + ")";
+  const Tsym = pend ? "2π√(L/g)" : "2π√(m/k)";
+  const fSym = pend ? "(1/2π)√(g/L)" : "(1/2π)√(k/m)";
+  const chips = [
+    ["ω = " + wSym, wNum + " = " + fmt(kin.omega0, 3) + " rad/s"],
+    ["T = " + Tsym, Number.isFinite(kin.T) ? fmt(kin.T, 3) + " s" + (kin.kind === "under" ? " (คาบดัดแปร 2π/ωd)" : "") : "ไม่ครบรอบ"],
+    ["f = " + fSym, Number.isFinite(kin.f) ? fmt(kin.f, 3) + " Hz" : "—"],
+    ["x = A cos ψ", fmt(kin.Aenv, 3) + " cos(" + fmt(kin.psi, 2) + ") → " + fmt(kin.x, 3) + " m"],
+    ["v = −Aω sin ψ", fmt(kin.v, 3) + " m/s"],
+    ["a = −ω²x", fmt(kin.a, 3) + " m/s²"],
+    ["F = −kx", fmt(kin.F, 2) + " N" + (state.b > 0 ? " · สุทธิ " + fmt(kin.Fnet, 2) + " N" : "")],
+    ["E = Ek + Ep", fmt(kin.Ek, 2) + " + " + fmt(kin.Ep, 2) + " = " + fmt(kin.E, 3) + " J"]
+  ];
+  if (!state.useDamp) {
+    const pred = kin.omega0 * Math.sqrt(Math.max(0, kin.Aenv * kin.Aenv - kin.x * kin.x));
+    chips[4][1] += " · ±ω√(A²−x²) = " + (kin.v < 0 ? "−" : "+") + fmt(pred, 3);
+  }
+  if (pend) chips[6][0] = "F = −(mg/L)x";
+  if (state.mode === 1 && state.orient === "v") chips.push(["δ = mg/k", fmt(kin.delta, 3) + " m  (เลื่อนสมดุล ไม่เปลี่ยน T)"]);
+  const box = document.getElementById("formulas");
+  box.innerHTML = chips.map((c) => "<div class='formula'><span class='k'>" + c[0] + "</span><span class='v'>" + c[1] + "</span></div>").join("");
+
+  document.getElementById("stat-vmax").querySelector(".v").textContent = fmt(kin.vmax, 3) + " m/s";
+  document.getElementById("stat-amax").querySelector(".v").textContent = fmt(kin.amax, 3) + " m/s²";
+  document.getElementById("stat-psi").querySelector(".v").textContent = fmt(kin.psi, 2) + " rad";
+  const Te = TAU * Math.sqrt(state.L / 9.81);
+  let effect;
+  if (pend) {
+    effect = "T = 2π√(L/g) = " + fmt(kin.T, 3) + " s ที่ L = " + fmt(state.L, 2) + " m และ g = " + fmt(state.g, 2) + " m/s² (" + planetName() + "). เพิ่ม L หรือลด g ทำให้คาบยาวขึ้น มวล " + fmt(state.m, 1) + " kg ไม่ปรากฏในสูตรคาบเมื่อ b = 0";
+    if (Math.abs(state.g - 9.81) > 0.05 && Number.isFinite(kin.T)) {
+      effect += " ถ้าอยู่บนโลก T จะเป็น " + fmt(Te, 3) + " s";
+    }
+  } else {
+    effect = "T = 2π√(m/k) = " + (Number.isFinite(kin.T) ? fmt(kin.T, 3) + " s" : "—") + " ที่ m = " + fmt(state.m, 1) + " kg และ k = " + fmt(state.k, 0) + " N/m. เพิ่ม m หรือลด k ทำให้คาบยาวขึ้น เปลี่ยน A ไม่เปลี่ยน T";
+    if (state.orient === "v" && state.mode === 1) effect += " แนวตั้ง: g ทำให้สมดุลเลื่อน δ = " + fmt(kin.delta, 3) + " m แต่ไม่เปลี่ยนคาบ";
+    else effect += " ระบบแนวนอนไม่ขึ้นกับ g";
+    if (state.mode === 3) effect += " จุดบนวงกลมหมุนด้วย ω คงตัว เงาบนแกนคือ x = A cos ψ";
+    if (state.mode === 4) effect += " เมื่อ b = 0 พลังงานกล ½kA² คงตัว Ek กับ Ep สลับกัน";
+  }
+  if (state.b > 0) effect += " ขณะนี้ b > 0 พลังงานกลไม่คงตัว";
+  document.getElementById("effect").textContent = effect;
+
+  const boxM = document.getElementById("miscon");
+  boxM.className = state.b > 0 ? "damp" : state.zone;
+  let title, body, extra;
+  if (state.zone === "eq") {
+    title = "ที่ตำแหน่งสมดุล ความเร่งไม่ได้สูงสุด";
+    body = "ตอนนี้อยู่ใกล้ x = 0 ความเร็ว v = " + fmt(kin.v, 3) + " m/s ใกล้ค่าสูงสุด " + fmt(kin.vmax, 3) + " m/s แต่แรงดึงกลับ F = " + fmt(kin.F, 3) + " N จึงมีความเร่ง a = " + fmt(kin.a, 3) + " m/s² ความเร็วสูงไม่ได้ทำให้ความเร่งสูง";
+  } else if (state.zone === "amp") {
+    title = "ที่แอมพลิจูด วัตถุหยุดชั่วขณะ";
+    body = "ระยะขจัดใกล้แอมพลิจูด ความเร็วเกือบเป็น 0 (ตอนนี้ v = " + fmt(kin.v, 3) + " m/s) แต่ความเร่งใกล้ค่าสูงสุด " + fmt(kin.amax, 3) + " m/s² และแรงดึงกลับชี้เข้าหาตำแหน่งสมดุล";
+  } else if (pend) {
+    title = "คาบลูกตุ้มไม่ขึ้นกับมวล";
+    body = "T = " + fmt(kin.T, 3) + " s จาก L และ g เท่านั้น ลองเลื่อนมวลจาก " + fmt(state.m, 1) + " kg แล้วดูว่า T ไม่เปลี่ยน เมื่อ b = 0";
+  } else if (state.mode === 3) {
+    title = "SHM คือเงาของการเคลื่อนที่วงกลม";
+    body = "จุดบนวงกลมมีความเร็วเชิงมุม ω คงตัว แต่เงาบนแกนมีความเร็วไม่คงที่: เร็วสุดที่สมดุล และหยุดที่ปลายแอมพลิจูด";
+  } else if (state.mode === 4) {
+    title = "พลังงานสลับกัน แต่ผลรวมคงตัวเมื่อไม่มีแรงต้าน";
+    body = "Ek = " + fmt(kin.Ek, 3) + " J และ Ep = " + fmt(kin.Ep, 3) + " J รวมเป็น " + fmt(kin.E, 3) + " J เทียบกับ ½kA² = " + fmt(kin.E0, 3) + " J";
+  } else {
+    title = "คาบของสปริงไม่ขึ้นกับแอมพลิจูด";
+    body = "T = " + fmt(kin.T, 3) + " s จาก m และ k เท่านั้น ลองเปลี่ยน A แล้วดูว่าคาบเดิม ภายในขีดจำกัดยืดหยุ่น";
+  }
+  if (pend && state.theta0 > 10) extra = "มุมเริ่มต้นเกิน 10° การประมาณ sinθ ≈ θ เริ่มคลาดเคลื่อน ลูกตุ้มจริงจะมีคาบยาวกว่านี้เล็กน้อย สื่อนี้ยังคำนวณตามแบบจำลองมุมแคบ";
+  else if (state.b > 0) extra = "มีแรงต้าน Fd = −bv พลังงานกลลดลง จึงไม่ใช่ SHM อุดมคติ ถ้ายังแกว่งได้ คาบจะเป็น 2π/ωd ซึ่งยาวกว่าคาบธรรมชาติเล็กน้อย";
+  else if (state.zone === "eq") extra = pend ? "อีกจุดที่พบบ่อย: คาบลูกตุ้มไม่ขึ้นกับมวล ลองเลื่อน m ดูค่า T" : "อีกจุดที่พบบ่อย: คาบสปริงไม่ยาวขึ้นเมื่อเพิ่ม A ลองเลื่อนแอมพลิจูดดูค่า T";
+  else if (pend) extra = "ลองเลื่อนมวล แล้วสังเกตว่าค่า T ไม่เปลี่ยน จากนั้นลองเปลี่ยน L หรือกดปุ่มดวงจันทร์";
+  else if (state.mode === 3) extra = "เงาบนแกนเร็วสุดตอนผ่านสมดุล และหยุดชั่วขณะที่ปลายแอมพลิจูด";
+  else if (state.mode === 4) extra = "ลองดูแท่ง Ek กับ Ep สลับกัน ขณะที่แท่งพลังงานรวมสูงเท่าเดิมเมื่อ b = 0";
+  else extra = "แรงลัพธ์เป็นตัวกำหนดความเร่ง ไม่ใช่ความเร็ว ตอนผ่านสมดุลความเร็วมีค่าสูงสุด แต่ความเร่งเป็นศูนย์";
+  document.getElementById("mis-title").textContent = title;
+  document.getElementById("mis-body").textContent = body;
+  document.getElementById("mis-extra").textContent = extra;
+
+  const notes = {
+    time: "เส้นประคือช่วงถัดไป จุดขาวคือขณะนี้ สังเกตว่า v สูงสุดเมื่อ x ตัดศูนย์ และ a อยู่ตรงข้ามกับ x ตลอด (ต่างเฟส 180°)",
+    energy: "Ep เป็นพาราโบลาของ x ส่วน Ek สูงสุดที่ x = 0 เมื่อ b = 0 เส้น E รวมเป็นเส้นตรงคงที่",
+    phase: "แกนถูกจัดสเกลตาม A และ v_max จึงเห็นเป็นวงรีหรือวงกลม จุดขาวคือสถานะตอนนี้ รอยเหลืองคือทางที่ผ่านมา"
+  };
+  document.getElementById("graph-note").textContent = notes[state.graph];
+  document.getElementById("g-hint").textContent = pend
+    ? "g เปลี่ยนคาบของลูกตุ้ม ตอนนี้คือ" + planetName()
+    : (state.mode === 1 && state.orient === "v" ? "g ไม่เปลี่ยนคาบสปริง แต่เลื่อนตำแหน่งสมดุล δ = mg/k" : "g ไม่เปลี่ยนคาบของระบบสปริงในโหมดนี้");
+}
+
+function render() {
+  const sim = prep(document.getElementById("sim"));
+  const graph = prep(document.getElementById("graph"));
+  const kin = getKinematics();
+  updateZone(kin);
+  drawSimulation(sim.ctx, sim.w, sim.h, kin);
+  drawGraph(graph.ctx, graph.w, graph.h, kin);
+  updateReadout(kin);
+  if (state.playing) {
+    state.trail.push({ q: kin.q, x: kin.x, v: kin.v });
+    if (state.trail.length > 240) state.trail.shift();
+  }
+}
+
+function setPressed(nodes, attr, value) {
+  nodes.forEach((btn) => btn.classList.toggle("on", btn.getAttribute(attr) === String(value)));
+}
+
+function syncControls() {
+  document.getElementById("m-val").textContent = state.m.toFixed(1) + " kg";
+  document.getElementById("k-val").textContent = state.k.toFixed(0) + " N/m";
+  document.getElementById("L-val").textContent = state.L.toFixed(1) + " m";
+  document.getElementById("A-val").textContent = state.A.toFixed(2) + " m";
+  document.getElementById("th-val").textContent = state.theta0.toFixed(0) + "°";
+  document.getElementById("g-val").textContent = state.g.toFixed(2) + " m/s²";
+  document.getElementById("b-val").textContent = state.b.toFixed(2) + " N·s/m";
+  const pend = state.mode === 2;
+  document.getElementById("row-k").classList.toggle("off", pend);
+  document.getElementById("k").disabled = pend;
+  document.getElementById("row-L").classList.toggle("off", !pend);
+  document.getElementById("L").disabled = !pend;
+  document.getElementById("row-th").classList.toggle("off", !pend);
+  document.getElementById("th").disabled = !pend;
+  document.getElementById("row-A").classList.toggle("off", pend);
+  document.getElementById("A").disabled = pend;
+  document.getElementById("row-orient").style.display = state.mode === 1 ? "" : "none";
+  setPressed(document.querySelectorAll("#modes button"), "data-mode", state.mode);
+  setPressed(document.querySelectorAll("#speeds button"), "data-speed", state.speed);
+  setPressed(document.querySelectorAll("#orient button"), "data-orient", state.orient);
+  setPressed(document.querySelectorAll("#presets button"), "data-g", state.g.toFixed(2));
+  setPressed(document.querySelectorAll("#graph-tabs button"), "data-graph", state.graph);
+  document.getElementById("play").textContent = state.playing ? "หยุดชั่วคราว" : "เล่น";
+}
+
+function onStructural(key) {
+  if (key === "A" || key === "theta0") state.liveAmp = null;
+  if (state.useDamp && (key === "A" || key === "theta0")) {
+    state.sol = makeSolution(sliderQ(), 0, omega0(), gammaOf());
+    state.dampT = 0;
+    state.phase = 0;
+  } else if (state.useDamp && (key === "m" || key === "k" || key === "L" || key === "g")) {
+    const ev = evalMotion(state.sol, state.dampT);
+    state.sol = makeSolution(ev.q, ev.qd, omega0(), gammaOf());
+    state.dampT = 0;
+  }
+  state.trail = [];
+  syncControls();
+}
+
+function onDampingInput() {
+  const kin = getKinematics();
+  if (state.b <= 0) {
+    state.b = 0;
+    if (state.useDamp) {
+      const w = omega0();
+      const Ainst = Math.hypot(kin.q, kin.qd / w);
+      if (Ainst < 1e-6) {
+        state.liveAmp = null;
+        state.phase = 0;
+      } else {
+        state.liveAmp = Ainst;
+        const s = clamp(-kin.qd / (Ainst * w), -1, 1);
+        const c = clamp(kin.q / Ainst, -1, 1);
+        let psi = Math.atan2(s, c);
+        if (psi < 0) psi += TAU;
+        state.phase = psi;
+      }
+      state.useDamp = false;
+      state.sol = null;
+    }
+  } else {
+    state.useDamp = true;
+    state.liveAmp = null;
+    state.sol = makeSolution(kin.q, kin.qd, omega0(), gammaOf());
+    state.dampT = 0;
+  }
+  state.trail = [];
+  syncControls();
+}
+
+function boot() {
+  const cardHost = document.getElementById("cards");
+  const spec = [
+    ["x", "การกระจัด x", "x"], ["v", "ความเร็ว v", "v"], ["a", "ความเร่ง a", "a"], ["F", "แรงดึงกลับ F", "f"],
+    ["w", "ความถี่เชิงมุม ω", ""], ["T", "คาบ T", ""], ["f", "ความถี่ f", ""],
+    ["Ek", "พลังงานจลน์ Ek", "ek"], ["Ep", "พลังงานศักย์ Ep", "ep"], ["E", "พลังงานกลรวม", "et"]
+  ];
+  cardHost.innerHTML = spec.map((c) => "<div class='card " + c[2] + "' id='card-" + c[0] + "'><span class='k'>" + c[1] + "</span><span class='v'>—</span></div>").join("");
+  document.getElementById("stats").innerHTML =
+    "<div class='stat' id='stat-vmax'><span class='k'>v_max = Aω</span><span class='v'>—</span></div>" +
+    "<div class='stat' id='stat-amax'><span class='k'>a_max = Aω²</span><span class='v'>—</span></div>" +
+    "<div class='stat' id='stat-psi'><span class='k'>เฟสขณะนี้ ψ</span><span class='v'>—</span></div>" +
+    "<div class='stat' id='effect'></div>";
+
+  document.getElementById("modes").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.mode = Number(btn.dataset.mode);
+    resetMotion();
+    syncControls();
+  });
+  document.getElementById("play").addEventListener("click", () => {
+    state.playing = !state.playing;
+    syncControls();
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    resetMotion();
+    syncControls();
+  });
+  document.getElementById("speeds").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.speed = Number(btn.dataset.speed);
+    syncControls();
+  });
+  document.getElementById("orient").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.orient = btn.dataset.orient;
+    syncControls();
+  });
+  document.getElementById("graph-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.graph = btn.dataset.graph;
+    syncControls();
+  });
+  document.getElementById("presets").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.g = Number(btn.dataset.g);
+    document.getElementById("g").value = String(state.g);
+    onStructural("g");
+  });
+  const bind = (id, key, digits) => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      if (key === "b") {
+        state.b = parseFloat(el.value);
+        onDampingInput();
+        return;
+      }
+      let captured = null;
+      if (state.useDamp && state.sol && key !== "A" && key !== "theta0") captured = evalMotion(state.sol, state.dampT);
+      state[key] = parseFloat(el.value);
+      if (captured) {
+        state.sol = makeSolution(captured.q, captured.qd, omega0(), gammaOf());
+        state.dampT = 0;
+        state.trail = [];
+        syncControls();
+        return;
+      }
+      onStructural(key);
+    });
+  };
+  bind("m", "m");
+  bind("k", "k");
+  bind("L", "L");
+  bind("A", "A");
+  bind("th", "theta0");
+  bind("g", "g");
+  bind("b", "b");
+  document.getElementById("vec").addEventListener("change", (e) => { state.showVec = e.target.checked; });
+  document.getElementById("nrg").addEventListener("change", (e) => { state.showEnergy = e.target.checked; });
+  window.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, textarea")) return;
+    if (e.code === "Space") { e.preventDefault(); state.playing = !state.playing; syncControls(); }
+    if (e.key === "r" || e.key === "R") { resetMotion(); syncControls(); }
+  });
+  const launch = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const launchMode = Number(launch.get("mode"));
+  if (launchMode >= 1 && launchMode <= 4) state.mode = launchMode;
+  if (launch.get("orient") === "v" || launch.get("orient") === "h") state.orient = launch.get("orient");
+  if (launch.get("graph") === "time" || launch.get("graph") === "energy" || launch.get("graph") === "phase") state.graph = launch.get("graph");
+  const launchPhase = Number(launch.get("phase"));
+  resetMotion();
+  if (Number.isFinite(launchPhase)) state.phase = ((launchPhase % TAU) + TAU) % TAU;
+  if (launch.get("play") === "0") state.playing = false;
+  syncControls();
+  const loop = (now) => {
+    if (!state.last) state.last = now;
+    let dt = Math.min(0.05, (now - state.last) / 1000);
+    state.last = now;
+    if (state.playing) advance(dt * state.speed);
+    render();
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+if (typeof document !== "undefined") boot();
+</script>
+</body>
+</html>
