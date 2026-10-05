@@ -35,22 +35,22 @@
   }
   button, input { font-family: inherit; }
   button { cursor: pointer; }
+  body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   header.top {
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    align-items: flex-end;
-    padding: 16px 18px 8px;
-    max-width: 1500px;
-    margin: 0 auto;
+    align-items: center;
+    padding: 10px 16px 8px;
+    flex: none;
   }
   header.top h1 {
     margin: 0;
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: 0;
   }
-  header.top p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  header.top p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
   .mark {
     color: var(--x);
     font-size: 13px;
@@ -59,24 +59,19 @@
     border-radius: 999px;
     white-space: nowrap;
   }
-  .app {
-    max-width: 1500px;
-    margin: 0 auto;
-    padding: 10px 14px 24px;
-    display: grid;
-    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr) minmax(300px, 390px);
-    gap: 12px;
-    align-items: start;
+  .stage {
+    flex: 1;
+    min-height: 0;
+    margin: 0 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   .panel {
-    background: rgba(20, 27, 45, 0.92);
+    background: rgba(20, 27, 45, 0.96);
     border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 12px;
-  }
-  .left, .right {
-    max-height: calc(100vh - 108px);
-    overflow: auto;
+    border-radius: 18px;
+    padding: 14px;
   }
   h2 {
     margin: 0 0 8px;
@@ -148,7 +143,7 @@
     font-size: 12px;
     line-height: 1.45;
   }
-  .sim-wrap { position: relative; }
+  .sim-wrap { position: relative; flex: 1; min-height: 0; }
   #sim, #graph {
     width: 100%;
     display: block;
@@ -156,8 +151,9 @@
     border-radius: 16px;
     border: 1px solid var(--line);
   }
-  #sim { height: min(430px, 48vh); min-height: 300px; }
-  #graph { height: 320px; }
+  #sim { position: absolute; inset: 0; height: 100%; }
+  #graph { height: min(340px, 42vh); }
+  .dock { flex: none; display: flex; flex-direction: column; gap: 8px; padding-bottom: 64px; }
   .badges {
     position: absolute;
     left: 10px;
@@ -175,10 +171,95 @@
     font-size: 12px;
   }
   #insight {
-    margin: 8px 0;
+    margin: 0;
     font-size: 14px;
     line-height: 1.45;
     color: #d5e4f8;
+  }
+  .transport {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(12, 18, 32, 0.92);
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+  .fab {
+    position: fixed;
+    bottom: 18px;
+    z-index: 45;
+    height: 52px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(61, 222, 200, 0.45);
+    background: #12312e;
+    color: #e9fffb;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+  }
+  .fab.graph {
+    right: 18px;
+    border-color: rgba(121, 167, 255, 0.5);
+    background: #18243d;
+  }
+  .fab.controls { left: 18px; }
+  .fab.on { outline: 2px solid rgba(255, 255, 255, 0.35); }
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 8, 16, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 30;
+  }
+  .backdrop.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed;
+    z-index: 40;
+    width: min(420px, calc(100vw - 24px));
+    max-height: min(78vh, 760px);
+    overflow: auto;
+    bottom: 104px;
+    transform-origin: bottom left;
+    transform: translateY(18px) scale(0.94);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.42s cubic-bezier(0.2, 1.35, 0.36, 1), opacity 0.22s ease;
+  }
+  .sheet.graph-sheet {
+    width: min(560px, calc(100vw - 24px));
+    right: 12px;
+    transform-origin: bottom right;
+  }
+  .sheet.controls-sheet { left: 12px; }
+  .sheet.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sheet-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .sheet-head h2 { margin: 0; color: var(--text); font-size: 16px; }
+  .sheet-close {
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 10px;
   }
   .cards, .formulas, .stats {
     display: grid;
@@ -244,17 +325,12 @@
     color: #f6efe2;
   }
   #mis-extra { margin-top: 8px; color: #d5deee; }
-  @media (max-width: 1180px) {
-    .app { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); }
-    .right { grid-column: 1 / -1; max-height: none; }
-    .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  }
-  @media (max-width: 800px) {
-    header.top { flex-direction: column; align-items: flex-start; }
-    .app { grid-template-columns: 1fr; }
-    .left { max-height: none; }
-    .cards, .formulas { grid-template-columns: 1fr 1fr; }
-    .mark { white-space: normal; }
+  @media (max-width: 900px) {
+    header.top p { display: none; }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .transport { left: 12px; right: 12px; transform: none; bottom: 76px; flex-wrap: wrap; justify-content: center; }
+    .dock { padding-bottom: 132px; }
+    .sheet, .sheet.graph-sheet { left: 12px; right: 12px; width: auto; }
   }
 </style>
 </head>
@@ -266,32 +342,50 @@
   </div>
   <div class="mark">F = −kx · a = −ω²x</div>
 </header>
-<main class="app">
-  <section class="panel left">
-    <h2>โหมดการจำลอง</h2>
+<main class="stage">
+  <div class="sim-wrap">
+    <canvas id="sim" width="1200" height="700"></canvas>
+    <div class="badges">
+      <span id="badge-mode"></span>
+      <span id="badge-time"></span>
+      <span id="badge-damp" hidden></span>
+      <span id="badge-angle" hidden></span>
+      <span id="badge-live" hidden></span>
+    </div>
+  </div>
+  <div class="dock">
+    <div id="insight"></div>
+    <div class="cards" id="cards"></div>
+  </div>
+</main>
+<div class="transport">
+  <div class="playrow">
+    <button type="button" id="play">หยุดชั่วคราว</button>
+    <button type="button" id="reset">เริ่มใหม่</button>
+  </div>
+  <div class="seg" id="speeds">
+    <button type="button" data-speed="0.25">0.25×</button>
+    <button type="button" data-speed="0.5">0.5×</button>
+    <button type="button" data-speed="1">1.0×</button>
+    <button type="button" data-speed="2">2.0×</button>
+  </div>
+</div>
+<button type="button" class="fab controls" id="fab-controls" aria-expanded="false">ปรับค่า</button>
+<button type="button" class="fab graph" id="fab-graph" aria-expanded="false">กราฟ</button>
+<div class="backdrop" id="backdrop"></div>
+<section class="panel sheet controls-sheet" id="sheet-controls">
+  <div class="sheet-head">
+    <h2>ปรับค่า</h2>
+    <button type="button" class="sheet-close" data-close="controls">ปิด</button>
+  </div>
+  <h2>โหมดการจำลอง</h2>
     <div class="modes" id="modes">
       <button type="button" data-mode="1"><strong>มวล–สปริง</strong><span>T = 2π√(m/k)</span></button>
       <button type="button" data-mode="2"><strong>ลูกตุ้มอย่างง่าย</strong><span>T = 2π√(L/g)</span></button>
       <button type="button" data-mode="3"><strong>วงกลมอ้างอิง</strong><span>เงาของ ω คงตัว</span></button>
       <button type="button" data-mode="4"><strong>พลังงานและเฟสเซอร์</strong><span>Ek, Ep, E รวม</span></button>
     </div>
-    <div class="row">
-      <h2>ควบคุมเวลา</h2>
-      <div class="playrow">
-        <button type="button" id="play">หยุดชั่วคราว</button>
-        <button type="button" id="reset">เริ่มใหม่</button>
-      </div>
-      <p class="hint">Space เล่นหรือหยุด · R เริ่มใหม่จากแอมพลิจูด</p>
-    </div>
-    <div class="row">
-      <div class="lbl"><span>ความเร็วแอนิเมชัน</span></div>
-      <div class="seg" id="speeds">
-        <button type="button" data-speed="0.25">0.25×</button>
-        <button type="button" data-speed="0.5">0.5×</button>
-        <button type="button" data-speed="1">1.0×</button>
-        <button type="button" data-speed="2">2.0×</button>
-      </div>
-    </div>
+    <p class="hint">Space เล่นหรือหยุด · R เริ่มใหม่จากแอมพลิจูด · ปุ่มเล่นอยู่แถบล่างของจอ</p>
     <div class="row" id="row-m">
       <div class="lbl"><span>มวล m</span><b id="m-val">1.0 kg</b></div>
       <input id="m" type="range" min="0.1" max="10" step="0.1" value="1" aria-label="มวล">
@@ -342,26 +436,13 @@
       <label class="switch"><input id="nrg" type="checkbox"> แสดงแผนภูมิแท่งพลังงาน</label>
     </div>
     <p class="assume">สมมติฐาน: สปริงและเชือกไร้มวล · ปล่อยจากหยุดนิ่งที่ +A หรือ +θ₀ · ลูกตุ้มใช้ sinθ ≈ θ ดังนั้น x = Lθ คือระยะตามแนวโค้ง · พลังงานศักย์ของลูกตุ้มในแบบจำลองนี้เท่ากับ ½(mg/L)x² หรือ mgh โดย h ≈ Lθ²/2</p>
-  </section>
-
-  <section class="panel mid">
-    <div class="sim-wrap">
-      <canvas id="sim" width="800" height="430"></canvas>
-      <div class="badges">
-        <span id="badge-mode"></span>
-        <span id="badge-time"></span>
-        <span id="badge-damp" hidden></span>
-        <span id="badge-angle" hidden></span>
-        <span id="badge-live" hidden></span>
-      </div>
-    </div>
-    <div id="insight"></div>
-    <div class="cards" id="cards"></div>
-    <div class="formulas" id="formulas"></div>
-  </section>
-
-  <section class="panel right">
-    <h2>กราฟความสัมพันธ์</h2>
+</section>
+<section class="panel sheet graph-sheet" id="sheet-graph">
+  <div class="sheet-head">
+    <h2>กราฟและความเข้าใจ</h2>
+    <button type="button" class="sheet-close" data-close="graph">ปิด</button>
+  </div>
+  <h2>กราฟความสัมพันธ์</h2>
     <div class="graph-tabs" id="graph-tabs">
       <button type="button" data-graph="time">x, v, a กับเวลา</button>
       <button type="button" data-graph="energy">พลังงานกับตำแหน่ง</button>
@@ -371,14 +452,15 @@
     <p id="graph-note"></p>
     <h2>ค่าวิเคราะห์</h2>
     <div class="stats" id="stats"></div>
+    <h2>สมการขณะนี้</h2>
+    <div class="formulas" id="formulas"></div>
     <div id="miscon">
       <p class="tag">ความเข้าใจคลาดเคลื่อนที่พบบ่อย</p>
       <h3 id="mis-title"></h3>
       <p id="mis-body"></p>
       <p id="mis-extra"></p>
     </div>
-  </section>
-</main>
+</section>
 <script>
 const C = {
   x: "#3ddec8", v: "#ffb020", a: "#ff5b8a", f: "#79a7ff",
@@ -675,7 +757,7 @@ function drawGrid(ctx, w, h) {
 }
 
 function pxFromAmp(boxW, amp) {
-  return clamp((boxW * 0.24) / Math.max(amp, 0.08), 70, 420);
+  return clamp((boxW * 0.36) / Math.max(amp, 0.12), 90, 1100);
 }
 
 function drawVectors(ctx, x0, y0, kin, axis, px) {
@@ -1680,7 +1762,25 @@ function boot() {
   bind("b", "b");
   document.getElementById("vec").addEventListener("change", (e) => { state.showVec = e.target.checked; });
   document.getElementById("nrg").addEventListener("change", (e) => { state.showEnergy = e.target.checked; });
+  let openSheet = "";
+  function setSheet(name) {
+    openSheet = openSheet === name ? "" : name;
+    document.getElementById("sheet-controls").classList.toggle("open", openSheet === "controls");
+    document.getElementById("sheet-graph").classList.toggle("open", openSheet === "graph");
+    document.getElementById("backdrop").classList.toggle("show", openSheet !== "");
+    document.getElementById("fab-controls").classList.toggle("on", openSheet === "controls");
+    document.getElementById("fab-graph").classList.toggle("on", openSheet === "graph");
+    document.getElementById("fab-controls").setAttribute("aria-expanded", String(openSheet === "controls"));
+    document.getElementById("fab-graph").setAttribute("aria-expanded", String(openSheet === "graph"));
+  }
+  document.getElementById("fab-controls").addEventListener("click", () => setSheet("controls"));
+  document.getElementById("fab-graph").addEventListener("click", () => setSheet("graph"));
+  document.getElementById("backdrop").addEventListener("click", () => { if (openSheet) setSheet(openSheet); });
+  document.querySelectorAll(".sheet-close").forEach((btn) => {
+    btn.addEventListener("click", () => setSheet(btn.dataset.close));
+  });
   window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && openSheet) { setSheet(openSheet); return; }
     if (e.target.matches("input, textarea")) return;
     if (e.code === "Space") { e.preventDefault(); state.playing = !state.playing; syncControls(); }
     if (e.key === "r" || e.key === "R") { resetMotion(); syncControls(); }
@@ -1695,6 +1795,7 @@ function boot() {
   if (Number.isFinite(launchPhase)) state.phase = ((launchPhase % TAU) + TAU) % TAU;
   if (launch.get("play") === "0") state.playing = false;
   syncControls();
+  if (launch.get("sheet") === "graph" || launch.get("sheet") === "controls") setSheet(launch.get("sheet"));
   const loop = (now) => {
     if (!state.last) state.last = now;
     let dt = Math.min(0.05, (now - state.last) / 1000);
